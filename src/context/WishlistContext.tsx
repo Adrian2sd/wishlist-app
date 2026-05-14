@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import * as api from '../api/client';
 
 interface WishlistContextType {
