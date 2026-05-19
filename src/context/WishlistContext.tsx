@@ -1,15 +1,16 @@
-import { createContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import * as api from '../api/client';
+import { createContext, useState, useEffect, ReactNode } from 'react';
+import type { Item } from '../api/wishlistApi';
+import * as api from '../api/wishlistApi';
+import { useAuth } from '../hooks/useAuth';
 
 interface WishlistContextType {
   items: Item[];
   loading: boolean;
   error: string | null;
   refreshItems: () => void;
-  addItem: (data: Omit<Item, 'id'>) => Promise<void>;
-  editItem: (id: string, data: Partial<Omit<Item, 'id'>>) => Promise<void>;
-  removeItem: (id: string) => Promise<void>;
+  addItem: (data: Omit<Item, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  editItem: (id: number, data: Partial<Omit<Item, 'id' | 'user_id' | 'created_at'>>) => Promise<void>;
+  removeItem: (id: number) => Promise<void>;
 }
 
 export const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
@@ -18,35 +19,42 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchItems = async () => {
+    if (!user) {
+      setItems([]);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getItems();
+      const data = await api.fetchItems();
       setItems(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } catch (err: any) {
+      setError(err.message || 'Error desconocido');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+  }, [user]);
 
   const refreshItems = () => fetchItems();
 
-  const addItem = async (data: Omit<Item, 'id'>) => {
+  const addItem = async (data: Omit<Item, 'id' | 'user_id' | 'created_at'>) => {
     await api.createItem(data);
     await fetchItems();
   };
 
-  const editItem = async (id: string, data: Partial<Omit<Item, 'id'>>) => {
+  const editItem = async (id: number, data: Partial<Omit<Item, 'id' | 'user_id' | 'created_at'>>) => {
     await api.updateItem(id, data);
     await fetchItems();
   };
 
-  const removeItem = async (id: string) => {
+  const removeItem = async (id: number) => {
     await api.deleteItem(id);
     await fetchItems();
   };

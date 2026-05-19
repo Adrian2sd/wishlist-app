@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import type { Item } from '../api/wishlistApi';
 
 interface Props {
   initialData?: Item;
-  onSubmit: (data: Omit<Item, 'id'>) => void | Promise<void>;
+  onSubmit: (data: Omit<Item, 'id' | 'user_id' | 'created_at'>) => void | Promise<void>;
   isLoading?: boolean;
 }
 
@@ -30,9 +31,13 @@ export const ItemForm = ({ initialData, onSubmit, isLoading }: Props) => {
     e.preventDefault();
     if (!validate()) return;
     onSubmit({
-      ...form,
+      name: form.name,
+      description: form.description,
       price: form.price ? Number(form.price) : 0,
-    });
+      link: form.link,
+      priority: form.priority,
+      category: form.category,
+    } as Omit<Item, 'id' | 'user_id' | 'created_at'>);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
