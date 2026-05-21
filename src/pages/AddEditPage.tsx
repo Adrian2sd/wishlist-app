@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react';
 import { useWishlist } from '../hooks/useWishlist';
 import * as api from '../api/client';
 import { ItemForm } from '../components/ItemForm';
+import type { Item } from '../api/wishlistApi';
 
 export const AddEditPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem, editItem } = useWishlist();
+
   const [item, setItem] = useState<Item | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(!!id);
@@ -15,8 +17,9 @@ export const AddEditPage = () => {
   useEffect(() => {
     if (id) {
       setFetchLoading(true);
+
       api.getItem(id)
-        .then(data => setItem(data))
+        .then((data) => setItem(data)) // ✅ FIX: sin "as Item"
         .catch(err => {
           console.error(err);
           alert('No se pudo cargar el producto');
@@ -26,14 +29,18 @@ export const AddEditPage = () => {
     }
   }, [id, navigate]);
 
-  const handleSubmit = async (data: Omit<Item, 'id'>) => {
+  const handleSubmit = async (
+    data: Omit<Item, 'id' | 'user_id' | 'created_at'>
+  ) => {
     setLoading(true);
+
     try {
       if (id) {
-        await editItem(id, data);
+        await editItem(Number(id), data);
       } else {
         await addItem(data);
       }
+
       navigate('/');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al guardar');
@@ -42,12 +49,20 @@ export const AddEditPage = () => {
     }
   };
 
-  if (fetchLoading) return <p className="text-center py-10">Cargando datos del producto...</p>;
+  if (fetchLoading)
+    return <p className="text-center py-10">Cargando datos del producto...</p>;
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">{id ? 'Editar producto' : 'Añadir nuevo producto'}</h1>
-      <ItemForm initialData={item} onSubmit={handleSubmit} isLoading={loading} />
+      <h1 className="text-3xl font-bold mb-6">
+        {id ? 'Editar producto' : 'Añadir nuevo producto'}
+      </h1>
+
+      <ItemForm
+        initialData={item}
+        onSubmit={handleSubmit}
+        isLoading={loading}
+      />
     </div>
   );
 };
